@@ -34,7 +34,7 @@ class HabitLog(Base):
     id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True),primary_key=True,default=uuid.uuid4)
     # uuid.uuid4 - автоматически генерирует новый uuid код
     habit_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True),ForeignKey("habit.id", ondelete="CASCADE"),nullable=False)
-    date: Mapped[date] = mapped_column(Date, nullable=False)
+    date: Mapped[date] = mapped_column(Date, nullable=False, server_default=func.current_date())
     count: Mapped[int] = mapped_column(nullable=False, default = 1)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
