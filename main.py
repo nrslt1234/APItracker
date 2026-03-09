@@ -5,6 +5,7 @@ import smtplib
 
 
 from dotenv import load_dotenv
+from sqlalchemy.exc import SQLAlchemyError
 from starlette.middleware.sessions import SessionMiddleware
 
 from DataBase.models import Habit, HabitLog
@@ -18,7 +19,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import select, insert, or_, and_, update, delete, func
+from sqlalchemy import select, insert, or_, and_, update, delete, func, desc
 from sqlalchemy.orm import joinedload, selectinload
 from datetime import date
 
@@ -131,7 +132,43 @@ def homes(habit_id: int):
             stmt = insert(HabitLog).values(habit_id = habit_id, count = 1, date = today)
             session.execute(stmt)
             session.commit()
-            return "Ты сегодня впервые начал заниматься этой привычкой. Поздравляю!"
+            return {"message" : "Ты сегодня впервые начал заниматься этой привычкой. Поздравляю!"}
         session.commit()
 
-    return "Единичка цели сегодня выполнена!"
+    return {"message" : "Единичка цели сегодня выполнена!"}
+
+
+@app.get("/habits/{habit_id}/logs/date_to/date_from")
+def homes(habit_id: int, date_from: date = Query(description="от этой даты"), date_to: date = Query(description="до этой даты включительно")):
+
+    with SessionLocal() as session:
+
+        stmt = select(HabitLog).where((and_(HabitLog.habit_id == habit_id, HabitLog.date >= date_from, HabitLog.date <= date_to))).order_by(desc(HabitLog.date))
+        choose_habits = session.execute(stmt).scalars().all()
+        # Нужно преобразовать объекты choose_habits в словари
+        history = [{"date": log.date.isoformat(), "count": log.count} for log in choose_habits]
+
+        return {"habit_id": habit_id, "history": history}
+
+@app.delete("/logs/{id}")
+def homes(id : int):
+    with SessionLocal() as session:
+        try:
+            stmt = delete(HabitLog).where(HabitLog.id == id)
+            session.execute(stmt)
+            session.commit()
+
+        except SQLAlchemyError:
+            return {"message" : "Не удалось удалить отметку"}
+
+    return {"message" : "Отметка была успешна удалена"}
+
+
+
+if __name__ == "__main__":
+    uvicorn.run(
+        "main:app",  # название файла (main.py) и объекта app
+        host="0.0.0.0",
+        port=8000,
+        reload=True
+    )

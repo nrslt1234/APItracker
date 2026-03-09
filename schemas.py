@@ -18,3 +18,4 @@ class HabitUpdateBase(BaseModel):
 
 class HabitUpdate(HabitUpdateBase):
     pass
+
