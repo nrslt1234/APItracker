@@ -28,8 +28,6 @@ from DataBase.session import SessionLocal
 
 app = FastAPI(title="Simple FastAPI App")
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
-templates = Jinja2Templates(directory="templates")
 
 app.add_middleware(SessionMiddleware, secret_key="super-secret-key")
 
